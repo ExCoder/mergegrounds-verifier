@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mergegrounds.chawax.chatgpt.site/schemas/evidence-v1.schema.json",
+  "title": "MergeGrounds evidence envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "information_class", "evidence_id", "subject", "control", "producer",
+    "invocation", "scope", "result", "policy", "validity", "references", "signature"
+  ],
+  "properties": {
+    "schema": {"const": "https://mergegrounds.chawax.chatgpt.site/schemas/evidence-v1.schema.json"},
+    "information_class": {"const": "evidence"},
+    "evidence_id": {"$ref": "#/$defs/uuid"},
+    "subject": {"$ref": "#/$defs/subject"},
+    "control": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id"],
+      "properties": {"id": {"type": "string", "minLength": 1, "maxLength": 256}}
+    },
+    "producer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["identity", "isolation_class", "tool_name", "tool_version", "tool_digest", "runner_image_digest", "workflow_digest"],
+      "properties": {
+        "identity": {"type": "string", "minLength": 1, "maxLength": 512, "pattern": "^[a-z][a-z0-9+.-]*://[^\\s]+$"},
+        "isolation_class": {"type": "string", "minLength": 1, "maxLength": 256},
+        "tool_name": {"type": "string", "minLength": 1, "maxLength": 256},
+        "tool_version": {"type": "string", "minLength": 1, "maxLength": 128},
+        "tool_digest": {"$ref": "#/$defs/digest"},
+        "runner_image_digest": {"$ref": "#/$defs/digest"},
+        "workflow_digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "invocation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "started_at", "finished_at", "attempt"],
+      "properties": {
+        "id": {"$ref": "#/$defs/uuid"},
+        "started_at": {"$ref": "#/$defs/timestamp"},
+        "finished_at": {"$ref": "#/$defs/timestamp"},
+        "attempt": {"type": "integer", "minimum": 1, "maximum": 1000}
+      }
+    },
+    "scope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["expected", "evaluated", "omitted", "complete"],
+      "properties": {
+        "expected": {"$ref": "#/$defs/scopeItems"},
+        "evaluated": {"type": "array", "maxItems": 100000, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 1024}},
+        "omitted": {
+          "type": "array", "maxItems": 100000,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["item", "reason"],
+            "properties": {
+              "item": {"type": "string", "minLength": 1, "maxLength": 1024},
+              "reason": {"type": "string", "minLength": 1, "maxLength": 1024}
+            }
+          }
+        },
+        "complete": {"type": "boolean"}
+      }
+    },
+    "result": {"$ref": "#/$defs/result"},
+    "policy": {"$ref": "#/$defs/policyBinding"},
+    "validity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["issued_at", "expires_at"],
+      "properties": {
+        "issued_at": {"$ref": "#/$defs/timestamp"},
+        "expires_at": {"$ref": "#/$defs/timestamp"}
+      }
+    },
+    "references": {"type": "array", "maxItems": 10000, "uniqueItems": true, "items": {"$ref": "#/$defs/digest"}},
+    "signature": {"$ref": "#/$defs/signature"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "uuid": {"type": "string", "format": "uuid", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"},
+    "timestamp": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"},
+    "scopeItems": {"type": "array", "minItems": 1, "maxItems": 100000, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 1024}},
+    "subject": {
+      "type": "object", "additionalProperties": false,
+      "required": ["repository", "commit", "tree", "base_commit", "canonical_diff_digest"],
+      "properties": {
+        "repository": {"type": "string", "minLength": 1, "maxLength": 512, "pattern": "^[a-z][a-z0-9+.-]*://[^\\s]+$"},
+        "commit": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+        "tree": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+        "base_commit": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+        "canonical_diff_digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "policyBinding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["policy_id", "version", "digest"],
+      "properties": {
+        "policy_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "version": {"type": "string", "minLength": 1, "maxLength": 128},
+        "digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "signature": {
+      "type": "object", "additionalProperties": false,
+      "required": ["algorithm", "key_id", "value"],
+      "properties": {
+        "algorithm": {"const": "ed25519"},
+        "key_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "value": {"type": "string", "pattern": "^[A-Za-z0-9_-]{86}$"}
+      }
+    },
+    "finding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fingerprint", "rule_id", "severity", "message_digest"],
+      "properties": {
+        "fingerprint": {"type": "string", "minLength": 1, "maxLength": 512},
+        "rule_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "severity": {"enum": ["info", "low", "medium", "high", "critical"]},
+        "message_digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "waiver": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema", "waiver_id", "subject", "policy", "control_id", "scope", "underlying_state", "authority", "reason", "issued_at", "expires_at", "signature"],
+      "properties": {
+        "schema": {"const": "https://mergegrounds.chawax.chatgpt.site/schemas/waiver-v1.schema.json"},
+        "waiver_id": {"$ref": "#/$defs/uuid"},
+        "subject": {"$ref": "#/$defs/subject"},
+        "policy": {"$ref": "#/$defs/policyBinding"},
+        "control_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "scope": {"$ref": "#/$defs/scopeItems"},
+        "underlying_state": {"enum": ["fail", "not_evaluated"]},
+        "authority": {"type": "string", "minLength": 1, "maxLength": 512, "pattern": "^[a-z][a-z0-9+.-]*://[^\\s]+$"},
+        "reason": {"type": "string", "minLength": 8, "maxLength": 2048},
+        "issued_at": {"$ref": "#/$defs/timestamp"},
+        "expires_at": {"$ref": "#/$defs/timestamp"},
+        "signature": {"$ref": "#/$defs/signature"}
+      }
+    },
+    "result": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["state", "complete", "findings"],
+          "properties": {
+            "state": {"enum": ["pass", "fail", "not_evaluated"]},
+            "complete": {"type": "boolean"},
+            "findings": {"type": "array", "maxItems": 100000, "items": {"$ref": "#/$defs/finding"}}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["state", "complete", "findings", "waiver"],
+          "properties": {
+            "state": {"const": "waived"},
+            "complete": {"type": "boolean"},
+            "findings": {"type": "array", "maxItems": 100000, "items": {"$ref": "#/$defs/finding"}},
+            "waiver": {"$ref": "#/$defs/waiver"}
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mergegrounds.chawax.chatgpt.site/schemas/policy-v1.schema.json",
+  "title": "MergeGrounds verifier policy v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "policy_id", "version", "clock_skew_seconds", "max_evidence_documents",
+    "trusted_keys", "trusted_producers", "waiver_authorities", "required_controls"
+  ],
+  "properties": {
+    "schema": {"const": "https://mergegrounds.chawax.chatgpt.site/schemas/policy-v1.schema.json"},
+    "policy_id": {"$ref": "#/$defs/stableId"},
+    "version": {"type": "string", "minLength": 1, "maxLength": 128},
+    "clock_skew_seconds": {"type": "integer", "minimum": 0, "maximum": 900},
+    "max_evidence_documents": {"type": "integer", "minimum": 1, "maximum": 4096},
+    "trusted_keys": {
+      "type": "array", "minItems": 1, "maxItems": 1024,
+      "items": {"$ref": "#/$defs/trustedKey"}
+    },
+    "trusted_producers": {
+      "type": "array", "minItems": 1, "maxItems": 1024,
+      "items": {"$ref": "#/$defs/trustedProducer"}
+    },
+    "waiver_authorities": {
+      "type": "array", "maxItems": 128,
+      "items": {"$ref": "#/$defs/waiverAuthority"}
+    },
+    "required_controls": {
+      "type": "array", "minItems": 1, "maxItems": 1024,
+      "items": {"$ref": "#/$defs/requiredControl"}
+    }
+  },
+  "$defs": {
+    "stableId": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$"},
+    "identity": {"type": "string", "minLength": 1, "maxLength": 512, "pattern": "^[a-z][a-z0-9+.-]*://[^\\s]+$"},
+    "keyId": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$"},
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "trustedKey": {
+      "type": "object", "additionalProperties": false,
+      "required": ["key_id", "algorithm", "purpose", "public_key"],
+      "properties": {
+        "key_id": {"$ref": "#/$defs/keyId"},
+        "algorithm": {"const": "ed25519"},
+        "purpose": {"enum": ["evidence", "waiver", "decision"]},
+        "public_key": {"type": "string", "pattern": "^[A-Za-z0-9_-]{43}$"}
+      }
+    },
+    "trustedProducer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["identity", "key_ids"],
+      "properties": {
+        "identity": {"$ref": "#/$defs/identity"},
+        "key_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/keyId"}}
+      }
+    },
+    "waiverAuthority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["identity", "key_ids"],
+      "properties": {
+        "identity": {"$ref": "#/$defs/identity"},
+        "key_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/keyId"}}
+      }
+    },
+    "requiredControl": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "id", "allowed_producers", "allowed_isolation_classes",
+        "allowed_tool_digests", "allowed_runner_image_digests",
+        "allowed_workflow_digests", "max_age_seconds", "required_scope", "waivable"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/stableId"},
+        "allowed_producers": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/identity"}},
+        "allowed_isolation_classes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/stableId"}},
+        "allowed_tool_digests": {"type": "array", "minItems": 1, "maxItems": 128, "uniqueItems": true, "items": {"$ref": "#/$defs/digest"}},
+        "allowed_runner_image_digests": {"type": "array", "minItems": 1, "maxItems": 128, "uniqueItems": true, "items": {"$ref": "#/$defs/digest"}},
+        "allowed_workflow_digests": {"type": "array", "minItems": 1, "maxItems": 128, "uniqueItems": true, "items": {"$ref": "#/$defs/digest"}},
+        "max_age_seconds": {"type": "integer", "minimum": 1, "maximum": 604800},
+        "required_scope": {"type": "array", "minItems": 1, "maxItems": 100000, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 1024}},
+        "waivable": {"type": "boolean"}
+      }
+    }
+  }
+}

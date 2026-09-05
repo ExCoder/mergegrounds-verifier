@@ -1,0 +1,193 @@
+name: release-assets
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      artifact-metadata: write
+      attestations: write
+      contents: read
+      id-token: write
+    steps:
+      - name: Check out complete tagged source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Bind tag, package version, source version and protected main
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python - <<'PY'
+          import ast
+          import os
+          import pathlib
+          import subprocess
+          import tomllib
+
+          root = pathlib.Path.cwd()
+          version = tomllib.loads((root / "pyproject.toml").read_text())["project"]["version"]
+          module = ast.parse((root / "src/mergegrounds_verifier/__init__.py").read_text())
+          source_version = next(
+              ast.literal_eval(node.value)
+              for node in module.body
+              if isinstance(node, ast.Assign)
+              and any(
+                  isinstance(target, ast.Name) and target.id == "__version__"
+                  for target in node.targets
+              )
+          )
+          expected_tag = f"v{version}"
+          if os.environ["RELEASE_TAG"] != expected_tag or source_version != version:
+              raise SystemExit(
+                  f"release identity mismatch: tag={os.environ['RELEASE_TAG']!r}, "
+                  f"project={version!r}, source={source_version!r}"
+              )
+          subprocess.run(
+              ["git", "merge-base", "--is-ancestor", os.environ["RELEASE_SHA"], "origin/main"],
+              check=True,
+          )
+          dirty = subprocess.check_output(
+              ["git", "status", "--porcelain=v1", "--untracked-files=all"], text=True
+          )
+          if dirty:
+              raise SystemExit(f"tag checkout is dirty:\n{dirty}")
+          PY
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.11.16
+      - name: Set up uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: 0.12.10
+          enable-cache: false
+      - name: Verify and audit locked source
+        run: |
+          uv sync --frozen --no-editable --group build
+          uv run ruff check src tests
+          uv run ruff format --check src tests
+          uv run coverage run -m unittest discover -s tests
+          uv run coverage report --fail-under=90
+          uv run pip-audit --requirement requirements.lock --disable-pip
+          uv run pip-audit --requirement build-requirements.lock --disable-pip
+      - name: Build distributions and dependency SBOM
+        run: |
+          SOURCE_DATE_EPOCH="$(git log -1 --pretty=%ct)" uv build --no-build-isolation
+          uv run pip-audit \
+            --requirement requirements.lock \
+            --disable-pip \
+            --format cyclonedx-json \
+            --output dist/sbom.cdx.json
+      - name: Inspect and install exactly the built artifacts
+        run: |
+          python - <<'PY'
+          import pathlib
+          import tarfile
+          import zipfile
+
+          dist = pathlib.Path("dist")
+          wheel, = dist.glob("*.whl")
+          sdist, = dist.glob("*.tar.gz")
+
+          blocked_suffixes = (".pem", ".key", ".p12", ".pfx", ".jks")
+          private_key_markers = (
+              b"-----BEGIN PRIVATE KEY-----",
+              b"-----BEGIN ENCRYPTED PRIVATE KEY-----",
+              b"-----BEGIN OPENSSH PRIVATE KEY-----",
+              b"-----BEGIN RSA PRIVATE KEY-----",
+              b"-----BEGIN EC PRIVATE KEY-----",
+          )
+
+          def inspect_member(name: str, payload: bytes) -> None:
+              if name.lower().endswith(blocked_suffixes):
+                  raise SystemExit(f"key-like file entered an artifact: {name}")
+              if any(marker in payload for marker in private_key_markers):
+                  raise SystemExit(f"private-key material entered an artifact: {name}")
+
+          with zipfile.ZipFile(wheel) as archive:
+              wheel_names = archive.namelist()
+              for info in archive.infolist():
+                  if not info.is_dir():
+                      inspect_member(info.filename, archive.read(info))
+          with tarfile.open(sdist, "r:gz") as archive:
+              sdist_names = archive.getnames()
+              for member in archive.getmembers():
+                  if member.isfile():
+                      extracted = archive.extractfile(member)
+                      if extracted is None:
+                          raise SystemExit(f"unable to inspect artifact member: {member.name}")
+                      inspect_member(member.name, extracted.read())
+          schema_names = [name for name in wheel_names if name.endswith(".schema.json")]
+          if len(schema_names) != 5:
+              raise SystemExit(f"expected five packaged schemas, got {schema_names}")
+          if not any(name.endswith("/build-requirements.lock") for name in sdist_names):
+              raise SystemExit("source distribution omitted build-requirements.lock")
+          PY
+          uv venv "$RUNNER_TEMP/release-venv" --python 3.11.16
+          uv pip install \
+            --python "$RUNNER_TEMP/release-venv/bin/python" \
+            --require-hashes \
+            --requirement requirements.lock
+          uv pip install \
+            --python "$RUNNER_TEMP/release-venv/bin/python" \
+            --no-deps \
+            dist/*.whl
+          "$RUNNER_TEMP/release-venv/bin/mergegrounds-verifier" --version
+          "$RUNNER_TEMP/release-venv/bin/python" - <<'PY'
+          import json
+          from importlib.resources import files
+          from jsonschema import Draft202012Validator
+
+          schemas = sorted(files("mergegrounds_verifier.schemas").glob("*.json"))
+          assert len(schemas) == 5, schemas
+          for path in schemas:
+              Draft202012Validator.check_schema(json.loads(path.read_text(encoding="utf-8")))
+          PY
+      - name: Create flat release checksum manifest
+        run: |
+          python - <<'PY'
+          import hashlib
+          import pathlib
+
+          dist = pathlib.Path("dist")
+          artifacts = sorted(
+              path
+              for pattern in ("*.whl", "*.tar.gz", "*.cdx.json")
+              for path in dist.glob(pattern)
+          )
+          if len(artifacts) != 3:
+              raise SystemExit(f"expected wheel, sdist and SBOM, got {artifacts}")
+          lines = [
+              f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}"
+              for path in artifacts
+          ]
+          pathlib.Path("SHA256SUMS").write_text("\n".join(lines) + "\n", encoding="ascii")
+          PY
+      - name: Attest distribution provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: dist/*
+      - name: Attest the wheel SBOM
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          sbom-path: dist/sbom.cdx.json
+          subject-path: dist/*.whl
+      - name: Upload provenance-bound release bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mergegrounds-verifier-${{ github.ref_name }}
+          path: |
+            dist/*
+            SHA256SUMS
+          if-no-files-found: error
+          retention-days: 7

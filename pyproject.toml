@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools==83.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mergegrounds-verifier"
+version = "0.1.0"
+description = "Fail-closed decision core for subject-bound MergeGrounds evidence"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [{ name = "MergeGrounds maintainers" }]
+dependencies = [
+  "cryptography==50.0.1",
+  "jsonschema==4.25.1",
+  "pynacl==1.6.2",
+]
+
+[project.urls]
+Homepage = "https://mergegrounds.chawax.chatgpt.site"
+"Parent project" = "https://github.com/ExCoder/mergegrounds"
+Repository = "https://github.com/ExCoder/mergegrounds-verifier"
+Issues = "https://github.com/ExCoder/mergegrounds-verifier/issues"
+Security = "https://github.com/ExCoder/mergegrounds-verifier/security"
+
+[project.scripts]
+mergegrounds-verifier = "mergegrounds_verifier.cli:main"
+
+[tool.uv]
+required-version = "==0.12.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+mergegrounds_verifier = ["schemas/*.json"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "S", "UP", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.coverage.run]
+branch = true
+source = ["mergegrounds_verifier"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+skip_covered = true
+omit = ["src/mergegrounds_verifier/__main__.py"]
+
+[dependency-groups]
+build = [
+  "setuptools==83.0.0",
+]
+dev = [
+  "coverage==7.16.0",
+  "pip-audit==2.10.1",
+  "ruff==0.13.2",
+]

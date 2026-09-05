@@ -1,0 +1,52 @@
+{
+  "schema": "https://mergegrounds.chawax.chatgpt.site/schemas/policy-v1.schema.json",
+  "policy_id": "example/reference-policy",
+  "version": "2026.09.1",
+  "clock_skew_seconds": 60,
+  "max_evidence_documents": 64,
+  "trusted_keys": [
+    {
+      "key_id": "example-producer-2026-09",
+      "algorithm": "ed25519",
+      "purpose": "evidence",
+      "public_key": "9q6WkUc98pmPifJdClxNugteRK-y7P9fPavCt-GRrFw"
+    },
+    {
+      "key_id": "example-waiver-2026-09",
+      "algorithm": "ed25519",
+      "purpose": "waiver",
+      "public_key": "ZbYtMr2XLssq6FoRWXshK5iz3I9jLfng5vRmdrSBcEM"
+    },
+    {
+      "key_id": "example-decision-2026-09",
+      "algorithm": "ed25519",
+      "purpose": "decision",
+      "public_key": "ZNIGxIB2Lf2Zjz1GDaa2t9C16R77QCZXOKpr2i9DpR8"
+    }
+  ],
+  "trusted_producers": [
+    {
+      "identity": "spiffe://verifier.test/producer/quality",
+      "key_ids": ["example-producer-2026-09"]
+    }
+  ],
+  "waiver_authorities": [
+    {
+      "identity": "spiffe://verifier.test/authority/security",
+      "key_ids": ["example-waiver-2026-09"]
+    }
+  ],
+  "required_controls": [
+    {
+      "id": "MG-QUALITY-001",
+      "allowed_producers": ["spiffe://verifier.test/producer/quality"],
+      "allowed_isolation_classes": ["ephemeral-read-only-source"],
+      "allowed_tool_digests": ["sha256:1111111111111111111111111111111111111111111111111111111111111111"],
+      "allowed_runner_image_digests": ["sha256:2222222222222222222222222222222222222222222222222222222222222222"],
+      "allowed_workflow_digests": ["sha256:3333333333333333333333333333333333333333333333333333333333333333"],
+      "max_age_seconds": 7200,
+      "required_scope": ["repository"],
+      "waivable": false
+    }
+  ]
+}

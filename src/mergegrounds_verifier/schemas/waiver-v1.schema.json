@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mergegrounds.chawax.chatgpt.site/schemas/waiver-v1.schema.json",
+  "title": "MergeGrounds waiver v1",
+  "$ref": "#/$defs/waiver",
+  "$defs": {
+    "subject": {
+      "type": "object", "additionalProperties": false,
+      "required": ["repository", "commit", "tree", "base_commit", "canonical_diff_digest"],
+      "properties": {
+        "repository": {"type": "string", "minLength": 1, "maxLength": 512, "pattern": "^[a-z][a-z0-9+.-]*://[^\\s]+$"},
+        "commit": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+        "tree": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+        "base_commit": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+        "canonical_diff_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    },
+    "policyBinding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["policy_id", "version", "digest"],
+      "properties": {
+        "policy_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "version": {"type": "string", "minLength": 1, "maxLength": 128},
+        "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    },
+    "signature": {
+      "type": "object", "additionalProperties": false,
+      "required": ["algorithm", "key_id", "value"],
+      "properties": {
+        "algorithm": {"const": "ed25519"},
+        "key_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "value": {"type": "string", "pattern": "^[A-Za-z0-9_-]{86}$"}
+      }
+    },
+    "uuid": {"type": "string", "format": "uuid", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"},
+    "waiver": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "schema", "waiver_id", "subject", "policy", "control_id", "scope",
+        "underlying_state", "authority", "reason", "issued_at", "expires_at", "signature"
+      ],
+      "properties": {
+        "schema": {"const": "https://mergegrounds.chawax.chatgpt.site/schemas/waiver-v1.schema.json"},
+        "waiver_id": {"$ref": "#/$defs/uuid"},
+        "subject": {"$ref": "#/$defs/subject"},
+        "policy": {"$ref": "#/$defs/policyBinding"},
+        "control_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "scope": {"type": "array", "minItems": 1, "maxItems": 100000, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 1024}},
+        "underlying_state": {"enum": ["fail", "not_evaluated"]},
+        "authority": {"type": "string", "minLength": 1, "maxLength": 512, "pattern": "^[a-z][a-z0-9+.-]*://[^\\s]+$"},
+        "reason": {"type": "string", "minLength": 8, "maxLength": 2048},
+        "issued_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"},
+        "expires_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"},
+        "signature": {"$ref": "#/$defs/signature"}
+      }
+    }
+  }
+}

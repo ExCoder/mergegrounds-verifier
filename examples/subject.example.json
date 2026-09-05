@@ -1,0 +1,8 @@
+{
+  "schema": "https://mergegrounds.chawax.chatgpt.site/schemas/subject-v1.schema.json",
+  "repository": "https://github.com/example/service",
+  "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "tree": "cccccccccccccccccccccccccccccccccccccccc",
+  "base_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "canonical_diff_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+}

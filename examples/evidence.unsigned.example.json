@@ -1,0 +1,53 @@
+{
+  "schema": "https://mergegrounds.chawax.chatgpt.site/schemas/evidence-v1.schema.json",
+  "information_class": "evidence",
+  "evidence_id": "0b46db8e-29a9-4b71-a23f-0fb7717e755f",
+  "subject": {
+    "repository": "https://github.com/example/service",
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "tree": "cccccccccccccccccccccccccccccccccccccccc",
+    "base_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "canonical_diff_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "control": {
+    "id": "MG-QUALITY-001"
+  },
+  "producer": {
+    "identity": "spiffe://verifier.test/producer/quality",
+    "isolation_class": "ephemeral-read-only-source",
+    "tool_name": "example-runner",
+    "tool_version": "1.0.0",
+    "tool_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "runner_image_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "workflow_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "invocation": {
+    "id": "54e4af07-838c-408d-bdd0-f28b0f467dfb",
+    "started_at": "2026-09-05T11:50:00Z",
+    "finished_at": "2026-09-05T11:51:00Z",
+    "attempt": 1
+  },
+  "scope": {
+    "expected": ["repository"],
+    "evaluated": ["repository"],
+    "omitted": [],
+    "complete": true
+  },
+  "result": {
+    "state": "pass",
+    "complete": true,
+    "findings": []
+  },
+  "policy": {
+    "policy_id": "example/reference-policy",
+    "version": "2026.09.1",
+    "digest": "sha256:0d46696ec39ec105e81b0901d85aec781f16f2d92ec3630009df133bc9d1501e"
+  },
+  "validity": {
+    "issued_at": "2026-09-05T11:52:00Z",
+    "expires_at": "2026-09-05T12:52:00Z"
+  },
+  "references": [
+    "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+  ]
+}

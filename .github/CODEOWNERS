@@ -1,0 +1,9 @@
+# Single-owner bootstrap. Expand to two real maintainer/security teams before production.
+* @ExCoder
+/.github/ @ExCoder
+/src/mergegrounds_verifier/crypto.py @ExCoder
+/src/mergegrounds_verifier/verifier.py @ExCoder
+/src/mergegrounds_verifier/schemas/ @ExCoder
+/Dockerfile @ExCoder
+/uv.lock @ExCoder
+/requirements.lock @ExCoder

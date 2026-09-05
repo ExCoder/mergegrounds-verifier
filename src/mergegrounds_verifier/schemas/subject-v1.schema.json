@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mergegrounds.chawax.chatgpt.site/schemas/subject-v1.schema.json",
+  "title": "MergeGrounds trusted subject v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "repository", "commit", "tree", "base_commit", "canonical_diff_digest"],
+  "properties": {
+    "schema": {"const": "https://mergegrounds.chawax.chatgpt.site/schemas/subject-v1.schema.json"},
+    "repository": {"type": "string", "minLength": 1, "maxLength": 512, "pattern": "^[a-z][a-z0-9+.-]*://[^\\s]+$"},
+    "commit": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+    "tree": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+    "base_commit": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"},
+    "canonical_diff_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}
