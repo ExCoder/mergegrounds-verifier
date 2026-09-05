@@ -1,6 +1,6 @@
 # Known limitations
 
-Version 0.1.0 is a reference implementation, not a production certification.
+Version 0.1.1 is a reference implementation, not a production certification.
 
 - It verifies decisions but does not execute linters, tests, mutation testing,
   scanners, fuzzers or builds in sandboxes.
@@ -22,7 +22,7 @@ Version 0.1.0 is a reference implementation, not a production certification.
   evaluation set for an explained retry instead of asking this core to pick a winner.
 - The service clock is trusted and freshness makes decisions time-dependent.
 - The release workflow emits GitHub/Sigstore provenance and a dependency SBOM, but
-  v0.1.0 does not claim byte-for-byte reproducible setuptools source archives, SLSA
+  v0.1.1 does not claim byte-for-byte reproducible setuptools source archives, SLSA
   Build Level 3, or end-to-end deployment provenance.
 - Repository and canonical-diff identity correctness is only as strong as the
   protected controller that supplies them.
