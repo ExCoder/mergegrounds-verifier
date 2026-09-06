@@ -22,7 +22,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Require GitHub-verified release commit and public author
+      - name: Require verified ExCoder web-flow release commit
         env:
           RELEASE_API_TOKEN: ${{ github.token }}
           RELEASE_API_URL: ${{ github.api_url }}
@@ -50,20 +50,20 @@ jobs:
               payload = json.load(response)
 
           verification = payload["commit"]["verification"]
-          author = payload["commit"]["author"]
           actor = payload.get("author") or {}
+          committer = payload.get("committer") or {}
           if verification.get("verified") is not True or verification.get("reason") != "valid":
               raise SystemExit(
                   "release commit is not GitHub-verified: "
                   f"verified={verification.get('verified')!r}, "
                   f"reason={verification.get('reason')!r}"
               )
-          if (
-              author.get("name") != "ExCoder"
-              or author.get("email") != "3510267+ExCoder@users.noreply.github.com"
-              or actor.get("login") != "ExCoder"
-          ):
-              raise SystemExit("release commit does not use the required public ExCoder identity")
+          if actor.get("login") != "ExCoder" or committer.get("login") != "web-flow":
+              raise SystemExit(
+                  "release commit is not attributed to ExCoder through GitHub web-flow: "
+                  f"author={actor.get('login')!r}, "
+                  f"committer={committer.get('login')!r}"
+              )
           PY
       - name: Bind tag, package version, source version and protected main
         env:

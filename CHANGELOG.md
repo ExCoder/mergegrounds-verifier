@@ -7,7 +7,9 @@ after 1.0; pre-1.0 minor versions may change schemas with explicit migration not
 
 - Require the release workflow to reject a tag whose target commit GitHub does not
   report as a valid verified signature.
-- Require the release commit to carry the public `ExCoder` noreply author identity.
+- Require the verified release commit API record to attribute the author to `ExCoder`
+  and the committer to GitHub `web-flow`, without depending on privacy-sensitive raw
+  Git author names or email addresses.
 - Replace the ambiguous unsigned annotated-tag fallback with an explicit lightweight
   tag fallback whose lack of a separate tag-object signature is recorded in release
   notes.
