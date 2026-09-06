@@ -11,9 +11,10 @@ different runs.
   intended `v<version>` tag agree.
 - Runtime and build locks were explicitly reviewed and both audits pass.
 - GitHub release immutability and Private Vulnerability Reporting are enabled.
-- The release commit is reviewed, uses the public `ExCoder` noreply author identity,
-  and GitHub reports its signature as `verified: true` with reason `valid`. The release
-  workflow enforces all three properties before it builds.
+- The release commit is reviewed, GitHub reports its signature as `verified: true`
+  with reason `valid`, and the commit API attributes it to author login `ExCoder` and
+  committer login `web-flow`. The workflow checks those stable account identities; it
+  does not inspect or log privacy-dependent raw Git author names or email addresses.
 - Use a signed annotated tag when a maintainer signing identity is configured.
   Otherwise use a lightweight tag that resolves directly to the verified release
   commit. Record in the release notes that there is no separate signed tag object;
@@ -34,7 +35,8 @@ For `0.1.1`, create `v0.1.1` at the exact protected-main commit and push only th
 The `release-assets` workflow then independently:
 
 1. checks that the tag, project version and source version match;
-2. asks GitHub to verify the release commit signature and public author identity;
+2. asks GitHub to verify the release commit signature and its ExCoder/web-flow account
+   attribution;
 3. proves the tagged commit is contained in `origin/main` and the checkout is clean;
 4. installs hash-locked runtime, development and build dependencies;
 5. runs lint, the complete test/coverage suite and both dependency audits;
@@ -84,11 +86,11 @@ SBOM against the flat checksum manifest and its provenance attestation once more
 Record the release URL, tag commit, workflow run, checksums and verification result in
 the launch evidence ledger.
 
-The v0.1.1 release notes must record the verified release commit SHA and signature
-state, the tag form and whether it has a separate signature, the successful workflow
-run, and the artifact/checksum verification result. v0.1.0 is retained for audit but
-is superseded for promotion because its immutable release records neither a verified
-release commit nor its unsigned annotated tag.
+The v0.1.1 release notes must record the verified release commit SHA, signature and
+ExCoder/web-flow attribution, the tag form and whether it has a separate signature,
+the successful workflow run, and the artifact/checksum verification result. v0.1.0
+is retained for audit but is superseded for promotion because its immutable release
+records neither a verified release commit nor its unsigned annotated tag.
 
 `SOURCE_DATE_EPOCH` stabilizes the wheel in the current toolchain, but v0.1.1 does not
 claim a byte-for-byte reproducible setuptools source archive or SLSA Build Level 3.
